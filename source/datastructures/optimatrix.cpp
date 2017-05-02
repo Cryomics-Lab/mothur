@@ -99,6 +99,8 @@ string OptiMatrix::getName(int index) {
 /***********************************************************************/
 bool OptiMatrix::isClose(int i, int toFind){
     try {
+        if (i > toFind) { int temp = i; i = toFind; toFind = temp; }
+        
         bool found = false;
         if (closeness[i].count(toFind) != 0) { found = true; }
         return found;
@@ -255,8 +257,11 @@ int OptiMatrix::readPhylip(){
                     if(distance < cutoff){
                         int newB = singletonIndexSwap[j];
                         int newA = singletonIndexSwap[i];
+                        
+                        //sparese storage
+                        if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
                         closeness[newA].insert(newB);
-                        closeness[newB].insert(newA);
+                        //closeness[newB].insert(newA);
                     }
                     index++; reading->update(index);
                 }
@@ -290,8 +295,10 @@ int OptiMatrix::readPhylip(){
                     if(distance < cutoff && j < i){
                         int newB = singletonIndexSwap[j];
                         int newA = singletonIndexSwap[i];
+                        //sparese storage
+                        if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
                         closeness[newA].insert(newB);
-                        closeness[newB].insert(newA);
+                        //closeness[newB].insert(newA);
                     }
                     index++; reading->update(index);
                 }
@@ -419,8 +426,11 @@ int OptiMatrix::readColumn(){
                 
                 int newB = singletonIndexSwap[indexB];
                 int newA = singletonIndexSwap[indexA];
+                
+                //sparese storage
+                if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
                 closeness[newA].insert(newB);
-                closeness[newB].insert(newA);
+                //closeness[newB].insert(newA);                closeness[newB].insert(newA);
                 
                 if (namefile != "") {
                     firstName = names[firstName];  //redundant names
@@ -433,6 +443,9 @@ int OptiMatrix::readColumn(){
         }
         in.close();
         nameAssignment.clear();
+        
+        if (m->debug) { unsigned long long ramUsed = m->getRAMUsed(); unsigned long long total = m->getTotalRAM();
+            m->mothurOut("\nCurrent RAM usage: " + toString(ramUsed/(double)GIG) + " Gigabytes. Total Ram: " + toString(total/(double)GIG) + " Gigabytes.\n"); }
         
         return 1;
         
