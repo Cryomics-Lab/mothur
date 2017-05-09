@@ -21,7 +21,7 @@ class OptiMatrix {
 
     
 public:
-    OptiMatrix() { m = MothurOut::getInstance(); }
+    OptiMatrix() { m = MothurOut::getInstance();  }
     OptiMatrix(string, string, double, bool); //distfile, distformat, cutoff, sim
     OptiMatrix(string, string, string, string, double, bool); //distfile, name or count, format, distformat, cutoff, sim
     ~OptiMatrix(){ }

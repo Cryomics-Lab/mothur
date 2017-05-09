@@ -14,6 +14,7 @@
 
 OptiMatrix::OptiMatrix(string d, string df, double c, bool s) : distFile(d), distFormat(df), cutoff(c), sim(s) {
     m = MothurOut::getInstance();
+    maxIndex = 0;
     countfile = ""; namefile = "";
     
     if (distFormat == "phylip") { readPhylip(); }
@@ -22,6 +23,7 @@ OptiMatrix::OptiMatrix(string d, string df, double c, bool s) : distFile(d), dis
 /***********************************************************************/
 OptiMatrix::OptiMatrix(string d, string nc, string f, string df, double c, bool s) : distFile(d), distFormat(df), format(f), cutoff(c), sim(s) {
     m = MothurOut::getInstance();
+    maxIndex = 0;
     
     if (format == "name") { namefile = nc; countfile = ""; }
     else if (format == "count") { countfile = nc; namefile = ""; }
@@ -87,7 +89,7 @@ long int OptiMatrix::print(ostream& out) {
 /***********************************************************************/
 string OptiMatrix::getName(int index) {
     try {
-        if (index > closeness.size()) { m->mothurOut("[ERROR]: index is not valid.\n"); m->control_pressed = true; return ""; }
+        if (index > maxIndex) { m->mothurOut("[ERROR]: index is not valid.\n"); m->control_pressed = true; return ""; }
         string name = nameMap[index];
         return name;
     }
@@ -261,7 +263,6 @@ int OptiMatrix::readPhylip(){
                         //sparese storage
                         if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
                         closeness[newA].insert(newB);
-                        //closeness[newB].insert(newA);
                     }
                     index++; reading->update(index);
                 }
@@ -298,7 +299,6 @@ int OptiMatrix::readPhylip(){
                         //sparese storage
                         if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
                         closeness[newA].insert(newB);
-                        //closeness[newB].insert(newA);
                     }
                     index++; reading->update(index);
                 }
@@ -348,6 +348,7 @@ int OptiMatrix::readColumn(){
         
         map<int, int> singletonIndexSwap;
         vector<bool> singleton; singleton.resize(nameAssignment.size(), true);
+        vector<bool> needsIndex; needsIndex.resize(nameAssignment.size(), false);
         while(fileHandle){  //let's assume it's a triangular matrix...
             
             fileHandle >> firstName; m->gobble(fileHandle);
@@ -374,6 +375,8 @@ int OptiMatrix::readColumn(){
                 singleton[indexB] = false;
                 singletonIndexSwap[indexA] = indexA;
                 singletonIndexSwap[indexB] = indexB;
+                if (indexA > indexB) {  needsIndex[indexB] = true; }
+                else { needsIndex[indexA] = true; }
             }
         }
         fileHandle.close();
@@ -382,8 +385,10 @@ int OptiMatrix::readColumn(){
         int nonSingletonCount = 0;
         for (int i = 0; i < singleton.size(); i++) {
             if (!singleton[i]) { //if you are a singleton
-                singletonIndexSwap[i] = nonSingletonCount;
-                nonSingletonCount++;
+                if (needsIndex[i]) {
+                    singletonIndexSwap[i] = nonSingletonCount;
+                    nonSingletonCount++;
+                }
             }else { singletons.push_back(nameMap[i]); }
         }
         singleton.clear();
@@ -400,7 +405,7 @@ int OptiMatrix::readColumn(){
                 singletons[i] = names[singletons[i]];
             }
         }
-        
+        cout << "here\n";
         while(in){  //let's assume it's a triangular matrix...
             
             in >> firstName; m->gobble(in);
@@ -424,13 +429,14 @@ int OptiMatrix::readColumn(){
                 int indexA = (itA->second);
                 int indexB = (itB->second);
                 
+                
                 int newB = singletonIndexSwap[indexB];
                 int newA = singletonIndexSwap[indexA];
                 
                 //sparese storage
                 if (newB > newA) { int temp = newB; newB = newA; newA = temp; }
-                closeness[newA].insert(newB);
-                //closeness[newB].insert(newA);                closeness[newB].insert(newA);
+                //only add if not already stored
+                if (newA < closeness.size()) { closeness[newA].insert(newB); }
                 
                 if (namefile != "") {
                     firstName = names[firstName];  //redundant names
@@ -446,6 +452,9 @@ int OptiMatrix::readColumn(){
         
         if (m->debug) { unsigned long long ramUsed = m->getRAMUsed(); unsigned long long total = m->getTotalRAM();
             m->mothurOut("\nCurrent RAM usage: " + toString(ramUsed/(double)GIG) + " Gigabytes. Total Ram: " + toString(total/(double)GIG) + " Gigabytes.\n"); }
+        
+        unsigned long long ramUsed = m->getRAMUsed(); unsigned long long total = m->getTotalRAM();
+        m->mothurOut("\nCurrent RAM usage: " + toString(ramUsed/(double)GIG) + " Gigabytes. Total Ram: " + toString(total/(double)GIG) + " Gigabytes.\n");
         
         return 1;
         
