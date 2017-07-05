@@ -305,6 +305,7 @@ int AlignCommand::execute(){
 			if (outputDir == "") {  outputDir += m->hasPath(candidateFileNames[s]); }
             map<string, string> variables; variables["[filename]"] = outputDir + m->getRootName(m->getSimpleName(candidateFileNames[s]));
 			string alignFileName = getOutputFileName("fasta", variables);  
+			if(align == "noalign") {alignFileName="/dev/null";}
 			string reportFileName = getOutputFileName("alignreport", variables);
 			string accnosFileName = getOutputFileName("accnos", variables);
             
